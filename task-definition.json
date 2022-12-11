@@ -1,0 +1,26 @@
+{
+    "family": "chkang_ecr_test",
+    "containerDefinitions": [
+        {
+            "name": "saba_cicd_test",
+            "image": "770939714089.dkr.ecr.ap-northeast-2.amazonaws.com/saba_cicd_test:latest",
+            "portMappings": [
+                {
+                    "containerPort": 5001,
+                    "hostPort": 5001,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true
+        }
+    ],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "networkMode": "awsvpc",
+    "cpu": "256",
+    "memory": "512",
+    "runtimePlatform": {
+        "operatingSystemFamily": "LINUX"
+    }
+}
