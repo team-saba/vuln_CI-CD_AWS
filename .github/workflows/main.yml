@@ -132,7 +132,8 @@ jobs:
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
         task-definition: ${{ steps.task-def.outputs.task-definition }}
-        cluster: ecs-chkang
+        cluster: saba-ecs-cluster
+        service: saba_cicd_test
         wait-for-service-stability: true
 
 
