@@ -1,0 +1,139 @@
+name: Deploy to ECR
+
+on:
+ 
+  push:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    name: Build Image
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-northeast-2
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build
+      run: |
+        docker build -t saba_kch_ci_test .
+        docker tag saba_kch_ci_test:latest ${{secrets.Registry_URL }}/saba_cicd_test:latest    
+        
+
+    - name: Pull saba image
+      run: |
+        docker pull seungwook0417/saba:latest
+
+    - name: Get local image id
+      id: cicd_id
+      run: |
+        echo "::set-output name=id::$(docker images --format "{{.ID}}" ${{secrets.Registry_URL }}/saba_cicd_test:latest)"
+
+    - name: Run scaner image
+      run: |
+        docker run --add-host=host.docker.internal:host-gateway -d -p 8002:8002 -v /var/run/docker.sock:/var/run/docker.sock -e HOST=0.0.0.0 -e PORT=8002 -e COSIGN_PASSWORD='1234' -e COSIGN_DOCKER_MEDIA_TYPES=1 -e Registry_URL='${{ secrets.Registry_URL }}/saba_kch_ci_test' --name saba seungwook0417/saba:latest
+        echo "Waiting for saba to start"
+        sleep 10
+        echo "Saba started"
+
+    - name: Run scan
+      run: |
+        result=$(curl -X POST -H "Content-Type: application/json" -d '{"image_id":"${{ steps.cicd_id.outputs.id }}"}' localhost:8002/image/scan | jq -r ".scan_result[].Severity")
+        echo $result
+
+        for i in $result
+        do
+            if [ "$i" = "CRITICAL" ]; then
+                echo "CRITICAL VULNERAVILITY"
+                exit 1                
+            fi
+        done
+
+#     - name: Run sign
+#       id: sign
+#       run: |
+#         sleep 10
+
+#         # 키생성
+#         curl -X 'POST' 'localhost:8002/image/keygen?password=1234' -H 'accept: application/json' -d ''
+
+#         sleep 10
+
+#         # sign image
+#         #스캔 결과에 따른 이미지 사이닝 진행
+#         signing=$(curl -X POST -H "Content-Type: application/json" -d '{"image_id":"${{ steps.cicd_id.outputs.id }}"}' localhost:8002/image/signing_image)
+#         echo $signing
+        
+#         isSigned=$(curl $signing | awk '{print length($0)}')
+
+#         echo "::set-output name=isSigned::$isSigned"
+        
+#     - name: verify image
+#       run: |
+#         sleep 10
+
+#         #사이닝 결과가 정상적일 경우 검증 실행 결과 리턴
+#         if [ -z "${{ steps.sign.outputs.isSigned }}" ]; then
+#             echo "SIGNING SUCCESS"
+#             verify=$(curl -X POST -H "Content-Type: application/json" -d '{"image_id":"${{ steps.cicd_id.outputs.id }}"}' localhost:8002/image/verify_image)
+#             echo $verify        
+#         else 
+#             echo "SIGNING FAILED"
+#             exit 1                
+#         fi
+
+    - name: push
+      run: | 
+        docker push ${{ secrets.Registry_URL }}/saba_cicd_test:latest
+
+    - name: make task-definition.json
+      run: |
+        echo "{
+          \"family\": \"chkang_ecr_test\",
+          \"containerDefinitions\": [
+            {
+              \"name\": \"saba_cicd_test\",
+              \"image\": \"${{ secrets.Registry_URL }}/saba_cicd_test:latest\",
+              \"portMappings\": [
+                {
+                  \"containerPort\": 80,
+                  \"hostPort\": 80
+                }
+              ],
+              \"memory\": 512,
+              \"essential\": true
+            }
+          ]
+        }" > task-definition.json
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: task-definition.json
+        container-name: saba_cicd_test
+        image: ${{ secrets.Registry_URL }}/saba_cicd_test:latest
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        cluster: ecs-chkang
+        wait-for-service-stability: true
+
+
+    
