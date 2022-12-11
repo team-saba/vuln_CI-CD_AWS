@@ -113,20 +113,17 @@ jobs:
                   \"containerPort\": 5001,
                   \"hostPort\": 5001,
                   \"protocol\": \"tcp\"
-                }
-              ],
+                }],
               \"essential\": true
-            },
-          ],
-          \"requiresCompatibilities\": [
-            \"FARGATE\"
-          ],
+            },],
+          \"requiresCompatibilities\": [\"FARGATE\"],
           \"networkMode\": \"awsvpc\",
           \"cpu\": \"256\",
           \"memory\": \"512\",
           \"runtimePlatform\": {
             \"operatingSystemFamily\": \"LINUX\",
-          }}" > task-definition.json
+            }
+          }" > task-definition.json
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
