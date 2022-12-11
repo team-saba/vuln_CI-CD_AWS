@@ -125,9 +125,8 @@ jobs:
           \"cpu\": \"256\",
           \"memory\": \"512\",
           \"runtimePlatform\": {
-            \"osFamily\": \"LINUX\",
-            \"cpuArchitecture\": \"X86_64\"
-          },
+            \"operatingSystemFamily\": \"LINUX\",
+          }
         }" > task-definition.json
 
     - name: Fill in the new image ID in the Amazon ECS task definition
