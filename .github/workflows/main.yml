@@ -112,7 +112,7 @@ jobs:
                 {
                   \"containerPort\": 5001,
                   \"hostPort\": 5001,
-                  \"protocol\": "tcp"
+                  \"protocol\": \"tcp\"
                 }
               ],
               \"essential\": true
@@ -145,6 +145,3 @@ jobs:
         cluster: saba-ecs-cluster
         service: saba_cicd_test
         wait-for-service-stability: true
-
-
-    
