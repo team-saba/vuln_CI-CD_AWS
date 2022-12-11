@@ -22,5 +22,6 @@
     "memory": "512",
     "runtimePlatform": {
         "operatingSystemFamily": "LINUX"
-    }
+    },
+    "executionRoleArn": "arn:aws:iam::770939714089:role/ecsTaskExecutionRole"
 }
