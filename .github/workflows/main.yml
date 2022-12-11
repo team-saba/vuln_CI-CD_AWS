@@ -100,7 +100,7 @@ jobs:
       run: | 
         docker push ${{ secrets.Registry_URL }}/saba_cicd_test:latest
 
-    - name: make task-definition.json
+    - name: Make task-definition.json
       run: |
         echo "{
           \"family\": \"chkang_ecr_test\",
