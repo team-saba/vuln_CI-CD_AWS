@@ -1,7 +1,7 @@
 # CVE-2022-23852
-FROM python:alpine3.14
+# FROM python:alpine3.14
 
-# FROM python:alpine3.16
+FROM python:alpine3.16
 
 RUN pip install flask
 
